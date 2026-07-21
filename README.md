@@ -12,13 +12,20 @@ MODIS fire detections, NDVI vegetation indices, and Land Surface Temperature (LS
 | **Step 1** | Forest fire point extraction | Fire points + annual/monthly CSVs |
 | **Step 2** | NDVI stress index features | 9 vegetation-thermal metrics |
 | **Step 3** | Land Surface Temperature analysis | Day/night LST + DTR trends + thermal footprint |
-| **Step 4** | *Planned:* ML-based fire risk modeling | Risk predictions |
+| **Step 4** | *Planned:* Additional climatic variables (specific humidity, precipitation, wind speed) | Aligned features feeding a PINN prediction model |
 
 All steps:
 - **Use the same study period:** Nov 1, 2000 – Dec 15, 2022
 - **Use the same boundary:** `India_State_Boundary.shp` (dissolved national polygon)
 - **Run on GPU:** CuPy with automatic CPU (NumPy) fallback
 - **Operate at 1km resolution:** Aligned MODIS grids across FIRMS, LULC, NDVI, LST
+
+> **Note on the boundary shapefiles:** `India_State_Boundary.shp` and
+> `India_Country_Boundary.shp` ship with a `.prj` declaring **EPSG:3857 (Web
+> Mercator)** — their raw coordinates are projected meters, not lon/lat, despite
+> having no CRS info at all before this was added. Every notebook reprojects to
+> EPSG:4326 before use; if you open these files directly in QGIS/ArcGIS they
+> should now load in the correct place automatically.
 
 ---
 
@@ -109,6 +116,23 @@ on the full spatiotemporal grid simultaneously.
 
 ---
 
+## Step 4 — Additional Climatic Variables *(planned)*
+
+**Variables:** specific humidity, precipitation, and wind speed.
+
+These will be brought in and aligned the same way LST was aligned to NDVI in Step 3 —
+same study period (Nov 2000 – Dec 2022), same India boundary, reprojected onto the same
+1km grid — so every variable sits on one common pixel/date index alongside the existing
+fire, NDVI, and LST features.
+
+The aligned multi-variable stack is the input to a **PINN (Physics-Informed Neural
+Network)** model for fire-risk prediction: rather than fitting a purely data-driven
+classifier, the network's loss is constrained by the physical relationships between
+these climatic drivers (e.g. moisture balance, thermal exchange) and fire behavior, in
+addition to fitting the labeled fire data itself.
+
+---
+
 ## Getting Started with Step 3 (LST Analysis)
 
 ### 1. Download MODIS MOD11A2 data
@@ -176,14 +200,17 @@ Base folder: D:\FOREST FIRE MAPPING(INDIA)\
 
 ## Integration: Multi-factor Fire Risk
 
-**Step 1 output** (forest fire points) → **Step 2** (NDVI stress) & **Step 3** (LST thermal) → 
-**Step 4** (ML risk model)
+**Step 1** (forest fire points) → **Step 2** (NDVI stress) & **Step 3** (LST thermal) →
+**Step 4** (specific humidity, precipitation, wind speed) → **PINN prediction model**
 
-All three steps are pixel-aligned at 1km resolution on the same grid, same dates, same country boundary.
-This enables direct correlation of:
+Steps 1–3 are already pixel-aligned at 1km resolution on the same grid, same dates, same
+country boundary. This enables direct correlation of:
 - Forest fire occurrence (Step 1)
 - Vegetation stress (Step 2)
 - Thermal anomalies (Step 3)
+
+Step 4 extends this same alignment to the remaining climatic drivers before the combined
+feature set feeds the PINN model.
 
 ---
 
