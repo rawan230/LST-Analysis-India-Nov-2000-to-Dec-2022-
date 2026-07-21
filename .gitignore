@@ -1,0 +1,14 @@
+# Raw MODIS LST GeoTIFF archive (~33 GB, 4,000+ files) -- re-download from
+# NASA AppEEARS instead of versioning; see README for the request parameters.
+LST_DAY_NIGHT_INDIA_DATA/
+
+# Local tool/session state -- not part of the analysis
+.claude/
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
