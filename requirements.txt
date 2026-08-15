@@ -1,0 +1,25 @@
+# Land Surface Temperature (LST) Day/Night Analysis — dependencies
+# Install with: pip install -r requirements.txt
+#
+# Verified kernel: wildfire_env (Python 3.10.20). The base anaconda3 environment
+# (numpy 2.5.1 + rasterio 1.5.0) also runs this notebook but throws a
+# DeprecationWarning ("Setting the shape on a NumPy array has been deprecated
+# in NumPy 2.5") on every GeoTIFF read via rasterio — this notebook reads
+# ~4000 of them, so use wildfire_env to avoid the noise and the forward-
+# compatibility risk once that becomes a hard error in a future NumPy release.
+
+geopandas
+numpy
+pandas
+matplotlib
+tqdm
+rasterio
+pyogrio
+
+# ── Optional: GPU acceleration (NVIDIA CUDA 12.x on Windows/Linux) ──────────
+# The pipeline auto-detects CuPy and falls back to NumPy (CPU) if these are
+# not installed or no compatible GPU is present. Uncomment to enable GPU:
+# cupy-cuda12x
+# nvidia-cuda-runtime-cu12
+# nvidia-cuda-nvrtc-cu12
+# nvidia-cuda-nvcc-cu12

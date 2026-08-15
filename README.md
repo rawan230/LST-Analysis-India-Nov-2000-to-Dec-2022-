@@ -99,12 +99,36 @@ infeasible with per-pixel serial loops, trivial on GPU.
 3. Computes **Diurnal Temperature Range (DTR)** = LST Day − LST Night.
 4. Builds climatology per pixel per month (2001–2020 baseline).
 5. Computes anomalies (deviation from climatology).
-6. **GPU-vectorized Mann-Kendall trend test** on day/night/DTR.
+6. **GPU-vectorized Mann-Kendall trend test** on day/night/DTR, with a normal-approximation
+   significance test (p-value via `erf`, same method Step 2/NDVI's Mann-Kendall uses) —
+   pixels need ≥10 valid months to get a reported τ/p.
 7. Rasterizes Step 1 forest-fire points onto the LST grid (thermal footprint).
 8. Exports time series, spatial trends, and summary statistics.
 
-**GPU acceleration:** Climatology, anomalies, Mann-Kendall τ, and rasterization all run 
-on the full spatiotemporal grid simultaneously.
+**GPU acceleration:** Climatology, anomalies, Mann-Kendall τ/p-value, and rasterization
+all run on the full spatiotemporal grid simultaneously.
+
+### Mann-Kendall trend significance (monthly resolution, p < 0.05)
+
+Same normal-approximation Mann-Kendall significance test as Step 2 (NDVI) — τ and its
+direction (`sign(S)`) are unchanged by this; the p-value is an added diagnostic that lets
+trend direction claims be reported as statistically significant or not, consistently with
+Step 2's browning/greening significance reporting.
+
+| Metric | τ mean | Significant warming/widening pixels | Significant cooling/narrowing pixels | Total significant |
+|---|---:|---:|---:|---:|
+| LST Day | −0.041 | 37,812 | 1,025,308 | 1,063,120 |
+| LST Night | +0.043 | 234,164 | 154 | 234,318 |
+| DTR | −0.104 | 19,004 | 2,526,283 | 2,545,287 |
+
+Reading: LST Night shows widespread significant warming (234,164 px), LST Day shows
+significant cooling at more pixels than warming, and DTR is significantly narrowing at
+the large majority of significant pixels — i.e. nights are warming faster than days are
+cooling, consistent with a narrowing diurnal range. Full per-metric breakdown (τ mean/std,
+increasing/decreasing pixel counts, and the significant subset of each) is in
+`LST_Outputs/LST_trend_summary.csv`; per-pixel p-value GeoTIFFs
+(`MannKendall_pvalue_LST_Day_monthly.tif`, `..._LST_Night_monthly.tif`, `..._DTR_monthly.tif`)
+are in `LST_Outputs/` alongside the existing τ GeoTIFFs.
 
 ### Data sources (Step 3)
 
@@ -144,23 +168,30 @@ addition to fitting the labeled fire data itself.
    - **Temporal range:** `2000-11-01` to `2022-12-31`
    - **Spatial extent:** Upload `India_State_Boundary.shp` (or use bbox: lon [68, 97.5], lat [6.5, 37.5])
    - **Layers:** `LST_Day_1km`, `LST_Night_1km`, `QC_Day`, `QC_Night`
-   - **Output format:** HDF
-4. Download all HDF files when ready (~5–10 GB)
+   - **Output format:** **GeoTIFF** (not HDF — the notebook reads single-band GeoTIFFs directly via `rasterio`)
+4. Download all GeoTIFF files when ready (~5–10 GB, ~4000 files)
 
 ### 2. Organize data
 
-Create folder in project root:
+Actual folder used by the notebook (`LST_DIR` in Step 2 — Configuration):
 ```
-LST_DATA(MODIS MOD11A2)/
-  ├── MOD11A2.A2000305.h25v08.061.*.hdf
-  ├── MOD11A2.A2000313.h25v08.061.*.hdf
-  ├── ... (all HDF files)
+LST_DAY_NIGHT_INDIA_DATA/
+  ├── MOD11A2.061_LST_Day_1km_20001031T000000_aid0001.tif
+  ├── MOD11A2.061_LST_Night_1km_20001031T000000_aid0001.tif
+  ├── ... (LST_Day, LST_Night, QC_Day, QC_Night GeoTIFFs, all 8-day composites)
 ```
 
 ### 3. Run the notebook
 
-Open [`LST_DAY_NIGHT.ipynb`](LST_DAY_NIGHT.ipynb), verify paths in Step 2 (Configuration), 
-then run all cells top-to-bottom.
+Open [`LST_DAY_NIGHT.ipynb`](LST_DAY_NIGHT.ipynb) with the **`wildfire_env`** kernel
+(Python 3.10.20 — pinned in the notebook's metadata). The `firerisk-anaconda3` kernel also
+runs it, but its newer numpy/rasterio combo (2.5.1 / 1.5.0) throws a `DeprecationWarning`
+on every GeoTIFF read (~4000 of them) that `wildfire_env` (numpy 2.2.6 / rasterio 1.4.3)
+doesn't. Verify paths in Step 2 (Configuration), then run all cells top-to-bottom, or:
+```bash
+pip install -r requirements.txt
+jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel_name=wildfire_env --ExecutePreprocessor.timeout=3600 "LST_DAY_NIGHT.ipynb"
+```
 
 ---
 
@@ -218,9 +249,10 @@ feature set feeds the PINN model.
 
 | Issue | Solution |
 |-------|----------|
-| "No LST data found in study period" | Verify HDF files are in `LST_DATA(MODIS MOD11A2)/` with naming pattern `MOD11A2.A*.hdf` |
+| "No LST data found in study period" | Verify GeoTIFF files are in `LST_DAY_NIGHT_INDIA_DATA/` with naming pattern `MOD11A2.061_LST_*_1km_*.tif` |
 | GPU out of memory (OOM) | Reduce study period or download fewer tiles; CPU fallback still works |
-| HDF read errors | Verify HDF files are not corrupted; try downloading again |
+| `DeprecationWarning` spam on every GeoTIFF read | You're running under `firerisk-anaconda3`; switch to the `wildfire_env` kernel |
+| GeoTIFF read errors | Verify files are not corrupted; try downloading again |
 | Boundary mismatch with Steps 1–2 | Confirm you used same `India_State_Boundary.shp` (not Country boundary) |
 | Fire CSV not found | Verify Step 1 has been run and `Forest_Fire_Outputs/all_forest_fire_points_2000-2022.csv` exists |
 
