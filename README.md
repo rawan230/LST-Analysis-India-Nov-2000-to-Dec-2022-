@@ -7,12 +7,20 @@ MODIS fire detections, NDVI vegetation indices, and Land Surface Temperature (LS
 
 ## Overview
 
+> **Renumbered 2026-08-17, content also updated:** this table (and the "Step 4" section
+> below) predates the project's FLDAS/integration/model steps being built — "Step 4" here
+> described a not-yet-built climatic-variables step. That step now exists (in its own
+> repo), and the pipeline has grown to six steps with training genuinely last. See root
+> `CLAUDE.md` for the authoritative current step list; the row below is corrected to match.
+
 | Step | Focus | Output |
 |------|-------|--------|
 | **Step 1** | Forest fire point extraction | Fire points + annual/monthly CSVs |
 | **Step 2** | NDVI stress index features | 9 vegetation-thermal metrics |
 | **Step 3** | Land Surface Temperature analysis | Day/night LST + DTR trends + thermal footprint |
-| **Step 4** | *Planned:* Additional climatic variables (specific humidity, precipitation, wind speed) | Aligned features feeding a PINN prediction model |
+| **Step 4** | FLDAS climatic variables (air temp, wind, humidity, precipitation, soil moisture, net LW radiation) + 22-class land cover | Aligned features feeding Step 5's assembly |
+| **Step 5** | Integrated multi-factor feature alignment | One assembled pixel table (`Integrated_FireRisk_Pixels.parquet`) |
+| **Step 6** | Fire susceptibility model (Random Forest baseline) | Trained classifier + probability map |
 
 All steps:
 - **Use the same study period:** Nov 1, 2000 – Dec 15, 2022
@@ -140,20 +148,23 @@ are in `LST_Outputs/` alongside the existing τ GeoTIFFs.
 
 ---
 
-## Step 4 — Additional Climatic Variables *(planned)*
+## Step 4 — FLDAS Climatic Variables *(done — see its own repo)*
 
-**Variables:** specific humidity, precipitation, and wind speed.
+**Variables:** air temperature, wind speed, specific humidity, precipitation, soil
+moisture, net LW radiation, plus 22-class land cover.
 
-These will be brought in and aligned the same way LST was aligned to NDVI in Step 3 —
+These were brought in and aligned the same way LST was aligned to NDVI in Step 3 —
 same study period (Nov 2000 – Dec 2022), same India boundary, reprojected onto the same
 1km grid — so every variable sits on one common pixel/date index alongside the existing
-fire, NDVI, and LST features.
+fire, NDVI, and LST features. Lives in its own folder/repo (`FLDAS Noah Land Surface
+Model...`), not this one — see `.claude/skills/fldas-climatic-variables/SKILL.md` for
+detail.
 
-The aligned multi-variable stack is the input to a **PINN (Physics-Informed Neural
-Network)** model for fire-risk prediction: rather than fitting a purely data-driven
-classifier, the network's loss is constrained by the physical relationships between
-these climatic drivers (e.g. moisture balance, thermal exchange) and fire behavior, in
-addition to fitting the labeled fire data itself.
+The aligned multi-variable stack feeds Step 5's assembly, then Step 6's Random Forest
+baseline. A future **PINN (Physics-Informed Neural Network)** model (planned Step 7) would
+constrain a network's loss by the physical relationships between these climatic drivers
+(e.g. moisture balance, thermal exchange) and fire behavior, in addition to fitting the
+labeled fire data itself — not yet built.
 
 ---
 
@@ -232,7 +243,8 @@ Base folder: D:\FOREST FIRE MAPPING(INDIA)\
 ## Integration: Multi-factor Fire Risk
 
 **Step 1** (forest fire points) → **Step 2** (NDVI stress) & **Step 3** (LST thermal) →
-**Step 4** (specific humidity, precipitation, wind speed) → **PINN prediction model**
+**Step 4** (FLDAS climatic variables + land cover) → **Step 5** (integrated feature
+alignment) → **Step 6** (Random Forest susceptibility model)
 
 Steps 1–3 are already pixel-aligned at 1km resolution on the same grid, same dates, same
 country boundary. This enables direct correlation of:
@@ -240,8 +252,9 @@ country boundary. This enables direct correlation of:
 - Vegetation stress (Step 2)
 - Thermal anomalies (Step 3)
 
-Step 4 extends this same alignment to the remaining climatic drivers before the combined
-feature set feeds the PINN model.
+Step 4 extends this same alignment to the remaining climatic drivers; Step 5 assembles
+everything into one pixel table; Step 6 trains the baseline model on it. A future PINN
+(planned Step 7) would consume the same Step 5 output.
 
 ---
 
