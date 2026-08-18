@@ -7,10 +7,13 @@ MODIS fire detections, NDVI vegetation indices, and Land Surface Temperature (LS
 
 ## Overview
 
-> **Renumbered 2026-08-17, content also updated:** this table (and the "Step 4" section
-> below) predates the project's FLDAS/integration/model steps being built — "Step 4" here
-> described a not-yet-built climatic-variables step. That step now exists (in its own
-> repo), and the pipeline has grown to six steps with training genuinely last. See root
+> **Renumbered 2026-08-17, then again 2026-08-19, content also updated:** this table (and
+> the "Step 4" section below) predates the project's FLDAS/integration/model steps being
+> built — "Step 4" here described a not-yet-built climatic-variables step. That step now
+> exists (in its own repo), and the pipeline has grown to seven steps with training
+> genuinely last. A new Step 5 (Terrain & Accessibility Analysis — elevation/slope/aspect
+> + distance to roads/railways/waterways) was inserted 2026-08-19 between FLDAS and
+> Integration, bumping Integration to Step 6 and the model to Step 7. See root
 > `CLAUDE.md` for the authoritative current step list; the row below is corrected to match.
 
 | Step | Focus | Output |
@@ -18,9 +21,10 @@ MODIS fire detections, NDVI vegetation indices, and Land Surface Temperature (LS
 | **Step 1** | Forest fire point extraction | Fire points + annual/monthly CSVs |
 | **Step 2** | NDVI stress index features | 9 vegetation-thermal metrics |
 | **Step 3** | Land Surface Temperature analysis | Day/night LST + DTR trends + thermal footprint |
-| **Step 4** | FLDAS climatic variables (air temp, wind, humidity, precipitation, soil moisture, net LW radiation) + 22-class land cover | Aligned features feeding Step 5's assembly |
-| **Step 5** | Integrated multi-factor feature alignment | One assembled pixel table (`Integrated_FireRisk_Pixels.parquet`) |
-| **Step 6** | Fire susceptibility model (Random Forest baseline) | Trained classifier + probability map |
+| **Step 4** | FLDAS climatic variables (air temp, wind, humidity, precipitation, soil moisture, net LW radiation) + 22-class land cover | Aligned features feeding Step 6's assembly |
+| **Step 5** | Terrain & Accessibility Analysis (elevation, slope, aspect; distance to roads, railways, waterways) | Aligned features feeding Step 6's assembly |
+| **Step 6** | Integrated multi-factor feature alignment | One assembled pixel table (`Integrated_FireRisk_Pixels.parquet`) |
+| **Step 7** | Fire susceptibility model (Random Forest + MaxEnt baselines) | Trained classifier + probability map |
 
 All steps:
 - **Use the same study period:** Nov 1, 2000 – Dec 15, 2022
@@ -160,11 +164,12 @@ fire, NDVI, and LST features. Lives in its own folder/repo (`FLDAS Noah Land Sur
 Model...`), not this one — see `.claude/skills/fldas-climatic-variables/SKILL.md` for
 detail.
 
-The aligned multi-variable stack feeds Step 5's assembly, then Step 6's Random Forest
-baseline. A future **PINN (Physics-Informed Neural Network)** model (planned Step 7) would
-constrain a network's loss by the physical relationships between these climatic drivers
-(e.g. moisture balance, thermal exchange) and fire behavior, in addition to fitting the
-labeled fire data itself — not yet built.
+The aligned multi-variable stack feeds Step 5 (Terrain & Accessibility) and Step 6's
+assembly, then Step 7's Random Forest + MaxEnt baselines. A **PINN (Physics-Informed
+Neural Network)** model — Step 8, already built with real results, see
+`Physics_Informed_FireRisk_Model/README.md` — constrains a network's loss by the
+physical relationships between these climatic drivers (e.g. moisture balance, thermal
+exchange) and fire behavior, in addition to fitting the labeled fire data itself.
 
 ---
 
@@ -243,8 +248,9 @@ Base folder: D:\FOREST FIRE MAPPING(INDIA)\
 ## Integration: Multi-factor Fire Risk
 
 **Step 1** (forest fire points) → **Step 2** (NDVI stress) & **Step 3** (LST thermal) →
-**Step 4** (FLDAS climatic variables + land cover) → **Step 5** (integrated feature
-alignment) → **Step 6** (Random Forest susceptibility model)
+**Step 4** (FLDAS climatic variables + land cover) & **Step 5** (terrain + accessibility)
+→ **Step 6** (integrated feature alignment) → **Step 7** (Random Forest + MaxEnt
+susceptibility models) → **Step 8** (PINN)
 
 Steps 1–3 are already pixel-aligned at 1km resolution on the same grid, same dates, same
 country boundary. This enables direct correlation of:
@@ -252,9 +258,10 @@ country boundary. This enables direct correlation of:
 - Vegetation stress (Step 2)
 - Thermal anomalies (Step 3)
 
-Step 4 extends this same alignment to the remaining climatic drivers; Step 5 assembles
-everything into one pixel table; Step 6 trains the baseline model on it. A future PINN
-(planned Step 7) would consume the same Step 5 output.
+Step 4 and Step 5 each extend this same alignment — climatic drivers and
+terrain/accessibility variables respectively; Step 6 assembles everything into one pixel
+table; Step 7 trains the baseline models on it. Step 8, the PINN, consumes the same
+Step 6 output and is already built with real results.
 
 ---
 
