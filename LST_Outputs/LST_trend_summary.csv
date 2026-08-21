@@ -1,4 +1,4 @@
-metric,tau_mean,tau_std,n_increasing_pixels,n_decreasing_pixels,n_significant_increasing_pixels,n_significant_decreasing_pixels,n_significant_total_pixels
-LST_Day_monthly,-0.040622685104608536,0.0585782565176487,1152418,3018893,37812,1025308,1063120
-LST_Night_monthly,0.042754922062158585,0.02693288028240204,4050545,121222,234164,154,234318
-DTR_monthly,-0.1037200465798378,0.07050154358148575,212181,3959723,19004,2526283,2545287
+metric,tau_mean,tau_std,n_increasing_pixels,n_decreasing_pixels,n_significant_increasing_pixels_raw_p05,n_significant_decreasing_pixels_raw_p05,n_significant_total_pixels_raw_p05,n_significant_increasing_pixels_fdr,n_significant_decreasing_pixels_fdr,n_significant_total_pixels_fdr
+LST_Day_monthly,-0.040622685104608536,0.0585782565176487,1152418,3018893,37812,1025308,1063120,12326,381512,393838
+LST_Night_monthly,0.042754922062158585,0.02693288028240204,4050545,121222,234164,154,234318,17927,8,17935
+DTR_monthly,-0.1037200465798378,0.07050154358148575,212181,3959723,19004,2526283,2545287,15328,2274723,2290051
