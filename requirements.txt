@@ -15,6 +15,7 @@ matplotlib
 tqdm
 rasterio
 pyogrio
+statsmodels
 
 # ── Optional: GPU acceleration (NVIDIA CUDA 12.x on Windows/Linux) ──────────
 # The pipeline auto-detects CuPy and falls back to NumPy (CPU) if these are
