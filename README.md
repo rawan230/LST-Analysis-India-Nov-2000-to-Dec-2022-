@@ -127,20 +127,32 @@ direction (`sign(S)`) are unchanged by this; the p-value is an added diagnostic 
 trend direction claims be reported as statistically significant or not, consistently with
 Step 2's browning/greening significance reporting.
 
+**FDR-corrected (Benjamini-Hochberg, current/reported number):**
+
 | Metric | τ mean | Significant warming/widening pixels | Significant cooling/narrowing pixels | Total significant |
 |---|---:|---:|---:|---:|
-| LST Day | −0.041 | 37,812 | 1,025,308 | 1,063,120 |
-| LST Night | +0.043 | 234,164 | 154 | 234,318 |
-| DTR | −0.104 | 19,004 | 2,526,283 | 2,545,287 |
+| LST Day | −0.041 | 12,326 | 381,512 | 393,838 |
+| LST Night | +0.043 | 17,927 | 8 | 17,935 |
+| DTR | −0.104 | 15,328 | 2,274,723 | 2,290,051 |
 
-Reading: LST Night shows widespread significant warming (234,164 px), LST Day shows
-significant cooling at more pixels than warming, and DTR is significantly narrowing at
-the large majority of significant pixels — i.e. nights are warming faster than days are
-cooling, consistent with a narrowing diurnal range. Full per-metric breakdown (τ mean/std,
-increasing/decreasing pixel counts, and the significant subset of each) is in
-`LST_Outputs/LST_trend_summary.csv`; per-pixel p-value GeoTIFFs
+Raw, uncorrected p<0.05 counts (kept for reference only — many of these are false
+discoveries under the ~4.16M-pixel multiple-comparisons burden this grid carries): LST Day
+1,063,120 total sig. (37,812 warming / 1,025,308 cooling), LST Night 234,318 total sig.
+(234,164 warming / 154 cooling), DTR 2,545,287 total sig. (19,004 widening / 2,526,283
+narrowing) — a 63% (Day), 92% (Night), and 10% (DTR) reduction respectively once FDR
+correction is applied.
+
+Reading (FDR-corrected numbers): LST Night's significant pixels are still almost entirely
+warming (17,927 of 17,935), LST Day shows significant cooling at far more pixels than
+warming, and DTR is significantly narrowing at the large majority of its significant
+pixels — the same qualitative pattern as the raw counts (nights warming faster than days
+are cooling, consistent with a narrowing diurnal range), just at reduced pixel counts once
+multiple-comparisons correction is applied. Full per-metric breakdown (τ mean/std,
+increasing/decreasing pixel counts, and both the raw and FDR-corrected significant subsets)
+is in `LST_Outputs/LST_trend_summary.csv`; per-pixel p-value GeoTIFFs
 (`MannKendall_pvalue_LST_Day_monthly.tif`, `..._LST_Night_monthly.tif`, `..._DTR_monthly.tif`)
-are in `LST_Outputs/` alongside the existing τ GeoTIFFs.
+are in `LST_Outputs/` alongside the existing τ GeoTIFFs and the FDR-corrected significance
+masks (`MannKendall_significant_FDR_*.tif`).
 
 ### Data sources (Step 3)
 
